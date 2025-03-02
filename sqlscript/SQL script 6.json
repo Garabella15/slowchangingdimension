@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 6",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) [Customer_ID]\n,[CustomerTitle]\n,[CustomerFirstName]\n,[CustomerMiddleName]\n,[CustomerLastName]\n,[CustomerSuffix]\n,[CompanyOfName]\n,[SalesPersonEmail]\n,[CustomerEmailAddress]\n,[CustomerPhone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]\n WHERE Customer_Id= 219;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "blaksaxonsql",
+				"poolName": "blaksaxonsql"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
