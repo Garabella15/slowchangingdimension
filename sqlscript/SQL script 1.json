@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "CREATE TABLE [dbo].[CustomerSource] (\n    [CustomerID] [int] NOT NULL,\n    [Title] [nvarchar](8),\n    [FirstName] [nvarchar](50),\n    [MiddleName] [nvarchar](50),\n    [LastName] [nvarchar](50),\n    [Suffix] [nvarchar](10),\n    [CompanyName] [nvarchar](128),\n    [SalesPerson] [nvarchar](256),\n    [EmailAddress] [nvarchar](50),\n    [Phone] [nvarchar](25)\n) WITH ( HEAP )\n\nCOPY INTO [dbo].[CustomerSource]\nFROM 'https://solliancepublicdata.blob.core.windows.net/dataengineering/dp-203/awdata/CustomerSource.csv'\nWITH (\n    FILE_TYPE='CSV',\n    FIELDTERMINATOR='|',\n    FIELDQUOTE='',\n    ROWTERMINATOR='0x0a',\n    ENCODING = 'UTF16'\n)\n\nCREATE TABLE dbo.[DimCustomers](\n    [Customer_ID] [int] NOT NULL,\n    [CustomerTitle] [nvarchar](8) NULL,\n    [CustomerFirstName] [nvarchar](50) NOT NULL,\n    [CustomerMiddleName] [nvarchar](50) NULL,\n    [CustomerLastName] [nvarchar](50) NOT NULL,\n    [CustomerSuffix] [nvarchar](10) NULL,\n    [CompanyOfName] [nvarchar](128) NULL,\n    [SalesPersonEmail] [nvarchar](256) NULL,\n    [CustomerEmailAddress] [nvarchar](50) NULL,\n    [CustomerPhone] [nvarchar](25) NULL,\n    [StartDate] [datetime] NOT NULL,\n    [EndDate] [datetime] NOT NULL,\n    [isCurrentRow] [char](1) NOT NULL,\n    [HashKey] [char](64) Not Null\n)\n\n\n\ndrop table [DimCustomers];",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "blaksaxonsql",
+				"poolName": "blaksaxonsql"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

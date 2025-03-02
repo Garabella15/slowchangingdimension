@@ -1,0 +1,253 @@
+{
+	"name": "SlowChangingdimensionT2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CustomerSource",
+						"type": "DatasetReference"
+					},
+					"name": "sourceTable"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimCustomers",
+						"type": "DatasetReference"
+					},
+					"name": "sourcetarget"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DimCustomers",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"rejectedDataLinkedService": {
+						"referenceName": "scdworkspace-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					}
+				},
+				{
+					"dataset": {
+						"referenceName": "DimCustomers",
+						"type": "DatasetReference"
+					},
+					"name": "sink4"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimCustomers",
+						"type": "DatasetReference"
+					},
+					"name": "sink5"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SliptCondition"
+				},
+				{
+					"name": "NewDimensions"
+				},
+				{
+					"name": "CreateHashKeyColumn"
+				},
+				{
+					"name": "SetEnddateRecord"
+				},
+				{
+					"name": "UpdateExistRecords"
+				},
+				{
+					"name": "lookupCustomerID"
+				},
+				{
+					"name": "StartAndEndDate"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as integer,",
+				"          Title as string,",
+				"          FirstName as string,",
+				"          MiddleName as string,",
+				"          LastName as string,",
+				"          Suffix as string,",
+				"          CompanyName as string,",
+				"          SalesPerson as string,",
+				"          EmailAddress as string,",
+				"          Phone as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table',",
+				"     staged: true) ~> sourceTable",
+				"source(output(",
+				"          Customer_ID as integer,",
+				"          CustomerTitle as string,",
+				"          CustomerFirstName as string,",
+				"          CustomerMiddleName as string,",
+				"          CustomerLastName as string,",
+				"          CustomerSuffix as string,",
+				"          CompanyOfName as string,",
+				"          SalesPersonEmail as string,",
+				"          CustomerEmailAddress as string,",
+				"          CustomerPhone as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          isCurrentRow as string,",
+				"          HashKey as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table',",
+				"     staged: true) ~> sourcetarget",
+				"lookupCustomerID split(isNull(Customer_ID),",
+				"     !isNull(CustomerID) && (CustomerID==Customer_ID || FirstName==CustomerFirstName || MiddleName==CustomerMiddleName || LastName==CustomerLastName|| CompanyName==CompanyOfName || Phone==CustomerPhone),",
+				"     disjoint: false) ~> SliptCondition@(newrecords, updatedRecords)",
+				"SliptCondition@newrecords derive(EffectiveStartDate = currentDate(),",
+				"          EffectiveEndDate = toDate('9999-12-31', 'YYYY-mm-dd'),",
+				"          IsCurrentRow = 'Y') ~> NewDimensions",
+				"sourceTable derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateHashKeyColumn",
+				"SliptCondition@updatedRecords derive(EffectiveEndDate = currentDate(),",
+				"          IsCurrentRow = 'N') ~> SetEnddateRecord",
+				"SetEnddateRecord alterRow(updateIf(1==1)) ~> UpdateExistRecords",
+				"CreateHashKeyColumn, sourcetarget lookup(CustomerID == Customer_ID,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookupCustomerID",
+				"SliptCondition@updatedRecords derive(EffectiveStartDate = currentDate(),",
+				"          EffectiveEndDate = toDate('9999-12-31', 'YYYY-mm-dd'),",
+				"          IsCurrentRow = 'Y') ~> StartAndEndDate",
+				"UpdateExistRecords sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Customer_ID as integer,",
+				"          CustomerTitle as string,",
+				"          CustomerFirstName as string,",
+				"          CustomerMiddleName as string,",
+				"          CustomerLastName as string,",
+				"          CustomerSuffix as string,",
+				"          CompanyOfName as string,",
+				"          SalesPersonEmail as string,",
+				"          CustomerEmailAddress as string,",
+				"          CustomerPhone as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          isCurrentRow as string,",
+				"          HashKey as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['Customer_ID'],",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Customer_ID = CustomerID,",
+				"          EndDate = EffectiveEndDate,",
+				"          isCurrentRow = SetEnddateRecord@IsCurrentRow",
+				"     )) ~> sink1",
+				"NewDimensions sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Customer_ID as integer,",
+				"          CustomerTitle as string,",
+				"          CustomerFirstName as string,",
+				"          CustomerMiddleName as string,",
+				"          CustomerLastName as string,",
+				"          CustomerSuffix as string,",
+				"          CompanyOfName as string,",
+				"          SalesPersonEmail as string,",
+				"          CustomerEmailAddress as string,",
+				"          CustomerPhone as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          isCurrentRow as string,",
+				"          HashKey as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Customer_ID = CustomerID,",
+				"          CustomerTitle = Title,",
+				"          CustomerFirstName = FirstName,",
+				"          CustomerMiddleName = MiddleName,",
+				"          CustomerLastName = LastName,",
+				"          CustomerSuffix = Suffix,",
+				"          CompanyOfName = CompanyName,",
+				"          SalesPersonEmail = SalesPerson,",
+				"          CustomerEmailAddress = EmailAddress,",
+				"          CustomerPhone = Phone,",
+				"          StartDate = EffectiveStartDate,",
+				"          EndDate = EffectiveEndDate,",
+				"          isCurrentRow = NewDimensions@IsCurrentRow,",
+				"          HashKey = SliptCondition@newrecords@HashKey",
+				"     )) ~> sink4",
+				"StartAndEndDate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Customer_ID as integer,",
+				"          CustomerTitle as string,",
+				"          CustomerFirstName as string,",
+				"          CustomerMiddleName as string,",
+				"          CustomerLastName as string,",
+				"          CustomerSuffix as string,",
+				"          CompanyOfName as string,",
+				"          SalesPersonEmail as string,",
+				"          CustomerEmailAddress as string,",
+				"          CustomerPhone as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          isCurrentRow as string,",
+				"          HashKey as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Customer_ID = CustomerID,",
+				"          CustomerTitle = Title,",
+				"          CustomerFirstName = FirstName,",
+				"          CustomerMiddleName = MiddleName,",
+				"          CustomerLastName = LastName,",
+				"          CustomerSuffix = Suffix,",
+				"          CompanyOfName = CompanyName,",
+				"          SalesPersonEmail = SalesPerson,",
+				"          CustomerEmailAddress = EmailAddress,",
+				"          CustomerPhone = Phone,",
+				"          StartDate = EffectiveStartDate,",
+				"          EndDate = EffectiveEndDate,",
+				"          isCurrentRow = StartAndEndDate@IsCurrentRow,",
+				"          HashKey = SliptCondition@updatedRecords@HashKey",
+				"     )) ~> sink5"
+			]
+		}
+	}
+}

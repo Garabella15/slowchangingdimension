@@ -1,0 +1,82 @@
+{
+	"name": "DimCustomers",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "scdworkspace-WorkspaceDefaultSqlServer",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"DBName": "Blaksaxonsql"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "Customer_ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CustomerTitle",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerFirstName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerMiddleName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerLastName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerSuffix",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CompanyOfName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "SalesPersonEmail",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerEmailAddress",
+				"type": "nvarchar"
+			},
+			{
+				"name": "CustomerPhone",
+				"type": "nvarchar"
+			},
+			{
+				"name": "StartDate",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "EndDate",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "isCurrentRow",
+				"type": "char"
+			},
+			{
+				"name": "HashKey",
+				"type": "char"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DimCustomers"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}
