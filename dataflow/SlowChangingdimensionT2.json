@@ -117,7 +117,7 @@
 				"sourceTable derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateHashKeyColumn",
 				"SliptCondition@updatedRecords derive(EffectiveEndDate = currentDate(),",
 				"          IsCurrentRow = 'N') ~> SetEnddateRecord",
-				"SetEnddateRecord alterRow(updateIf(1==1)) ~> UpdateExistRecords",
+				"SetEnddateRecord alterRow(updateIf(true())) ~> UpdateExistRecords",
 				"CreateHashKeyColumn, sourcetarget lookup(CustomerID == Customer_ID,",
 				"     multiple: false,",
 				"     pickup: 'any',",

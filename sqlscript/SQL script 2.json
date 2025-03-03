@@ -2,7 +2,7 @@
 	"name": "SQL script 2",
 	"properties": {
 		"content": {
-			"query": "SELECT * FROM [dbo].[DimCustomers];\n\n\nUPDATE [dbo].[CustomerSource]\nSET Phone= '654-33-73940'\nWHERE [CustomerId] = 120",
+			"query": "SELECT * FROM [dbo].[DimCustomers];\n\n\nUPDATE [dbo].[CustomerSource]\nSET Phone= '654-33-7391'\nWHERE [CustomerId] = 237",
 			"metadata": {
 				"language": "sql"
 			},
