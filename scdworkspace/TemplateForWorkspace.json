@@ -552,7 +552,7 @@
 						"sourceTable derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateHashKeyColumn",
 						"SliptCondition@updatedRecords derive(EffectiveEndDate = currentDate(),",
 						"          IsCurrentRow = 'N') ~> SetEnddateRecord",
-						"SetEnddateRecord alterRow(updateIf(1==1)) ~> UpdateExistRecords",
+						"SetEnddateRecord alterRow(updateIf(true())) ~> UpdateExistRecords",
 						"CreateHashKeyColumn, sourcetarget lookup(CustomerID == Customer_ID,",
 						"     multiple: false,",
 						"     pickup: 'any',",
@@ -876,27 +876,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "SELECT * FROM [dbo].[DimCustomers];\n\n\nUPDATE [dbo].[CustomerSource]\nSET Phone= '654-33-73940'\nWHERE [CustomerId] = 120",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "blaksaxonsql",
-						"poolName": "blaksaxonsql"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SELECT TOP (100) [CustomerID]\n,[Title]\n,[FirstName]\n,[MiddleName]\n,[LastName]\n,[Suffix]\n,[CompanyName]\n,[SalesPerson]\n,[EmailAddress]\n,[Phone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]",
+					"query": "SELECT * FROM [dbo].[DimCustomers];\n\n\nUPDATE [dbo].[CustomerSource]\nSET Phone= '654-33-7391'\nWHERE [CustomerId] = 237",
 					"metadata": {
 						"language": "sql"
 					},
@@ -917,26 +897,6 @@
 			"properties": {
 				"content": {
 					"query": "SELECT TOP (100) [CustomerID]\n,[Title]\n,[FirstName]\n,[MiddleName]\n,[LastName]\n,[Suffix]\n,[CompanyName]\n,[SalesPerson]\n,[EmailAddress]\n,[Phone]\n FROM [dbo].[CustomerSource]",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "blaksaxonsql",
-						"poolName": "blaksaxonsql"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SELECT TOP (100) [Customer_ID]\n,[CustomerTitle]\n,[CustomerFirstName]\n,[CustomerMiddleName]\n,[CustomerLastName]\n,[CustomerSuffix]\n,[CompanyOfName]\n,[SalesPersonEmail]\n,[CustomerEmailAddress]\n,[CustomerPhone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]\n where Customer_ID= 505;",
 					"metadata": {
 						"language": "sql"
 					},
