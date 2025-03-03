@@ -1,0 +1,986 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "scdworkspace"
+		},
+		"scdworkspace-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'scdworkspace-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:scdworkspace.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"scdworkspace-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://scdsdatalakestore.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "UpdateCustomerDimensions",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"sourceDB": {},
+									"DimCustomer": {},
+									"Sink": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "scdworkspace-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "source"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine",
+							"sourceStagingConcurrency": 1
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-03-02T01:36:53Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/UpdateCustomerDimensions')]",
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Scdt2Pipeline')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Scd2datamodel",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "SlowChangingdimensionT2",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"sourceTable": {},
+									"sourcetarget": {},
+									"sink1": {},
+									"sink4": {},
+									"sink5": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "scdworkspace-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "source"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine",
+							"sourceStagingConcurrency": 1
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-03-02T20:51:24Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/SlowChangingdimensionT2')]",
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CustomerSource')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "scdworkspace-WorkspaceDefaultSqlServer",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DBName": "Blaksaxonsql"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Title",
+						"type": "nvarchar"
+					},
+					{
+						"name": "FirstName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "MiddleName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "LastName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Suffix",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CompanyName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "SalesPerson",
+						"type": "nvarchar"
+					},
+					{
+						"name": "EmailAddress",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Phone",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "CustomerSource"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultSqlServer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DimCustomers')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "scdworkspace-WorkspaceDefaultSqlServer",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DBName": "Blaksaxonsql"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "Customer_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CustomerTitle",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerFirstName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerMiddleName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerLastName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerSuffix",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CompanyOfName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "SalesPersonEmail",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerEmailAddress",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CustomerPhone",
+						"type": "nvarchar"
+					},
+					{
+						"name": "StartDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "EndDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "isCurrentRow",
+						"type": "char"
+					},
+					{
+						"name": "HashKey",
+						"type": "char"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "DimCustomers"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultSqlServer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Dimcustomer')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "scdworkspace-WorkspaceDefaultSqlServer",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DBName": "Blaksaxonsql"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Title",
+						"type": "nvarchar"
+					},
+					{
+						"name": "FirstName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "MiddleName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "LastName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Suffix",
+						"type": "nvarchar"
+					},
+					{
+						"name": "CompanyName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "SalesPerson",
+						"type": "nvarchar"
+					},
+					{
+						"name": "EmailAddress",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Phone",
+						"type": "nvarchar"
+					},
+					{
+						"name": "InsertedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "ModifiedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "HashKey",
+						"type": "char"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "DimCustomer"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultSqlServer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/scdworkspace-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('scdworkspace-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/scdworkspace-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('scdworkspace-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SlowChangingdimensionT2')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CustomerSource",
+								"type": "DatasetReference"
+							},
+							"name": "sourceTable"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimCustomers",
+								"type": "DatasetReference"
+							},
+							"name": "sourcetarget"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DimCustomers",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"rejectedDataLinkedService": {
+								"referenceName": "scdworkspace-WorkspaceDefaultStorage",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"dataset": {
+								"referenceName": "DimCustomers",
+								"type": "DatasetReference"
+							},
+							"name": "sink4"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimCustomers",
+								"type": "DatasetReference"
+							},
+							"name": "sink5"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SliptCondition"
+						},
+						{
+							"name": "NewDimensions"
+						},
+						{
+							"name": "CreateHashKeyColumn"
+						},
+						{
+							"name": "SetEnddateRecord"
+						},
+						{
+							"name": "UpdateExistRecords"
+						},
+						{
+							"name": "lookupCustomerID"
+						},
+						{
+							"name": "StartAndEndDate"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as integer,",
+						"          Title as string,",
+						"          FirstName as string,",
+						"          MiddleName as string,",
+						"          LastName as string,",
+						"          Suffix as string,",
+						"          CompanyName as string,",
+						"          SalesPerson as string,",
+						"          EmailAddress as string,",
+						"          Phone as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> sourceTable",
+						"source(output(",
+						"          Customer_ID as integer,",
+						"          CustomerTitle as string,",
+						"          CustomerFirstName as string,",
+						"          CustomerMiddleName as string,",
+						"          CustomerLastName as string,",
+						"          CustomerSuffix as string,",
+						"          CompanyOfName as string,",
+						"          SalesPersonEmail as string,",
+						"          CustomerEmailAddress as string,",
+						"          CustomerPhone as string,",
+						"          StartDate as timestamp,",
+						"          EndDate as timestamp,",
+						"          isCurrentRow as string,",
+						"          HashKey as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> sourcetarget",
+						"lookupCustomerID split(isNull(Customer_ID),",
+						"     !isNull(CustomerID) && (CustomerID==Customer_ID || FirstName==CustomerFirstName || MiddleName==CustomerMiddleName || LastName==CustomerLastName|| CompanyName==CompanyOfName || Phone==CustomerPhone),",
+						"     disjoint: false) ~> SliptCondition@(newrecords, updatedRecords)",
+						"SliptCondition@newrecords derive(EffectiveStartDate = currentDate(),",
+						"          EffectiveEndDate = toDate('9999-12-31', 'YYYY-mm-dd'),",
+						"          IsCurrentRow = 'Y') ~> NewDimensions",
+						"sourceTable derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateHashKeyColumn",
+						"SliptCondition@updatedRecords derive(EffectiveEndDate = currentDate(),",
+						"          IsCurrentRow = 'N') ~> SetEnddateRecord",
+						"SetEnddateRecord alterRow(updateIf(1==1)) ~> UpdateExistRecords",
+						"CreateHashKeyColumn, sourcetarget lookup(CustomerID == Customer_ID,",
+						"     multiple: false,",
+						"     pickup: 'any',",
+						"     broadcast: 'auto')~> lookupCustomerID",
+						"SliptCondition@updatedRecords derive(EffectiveStartDate = currentDate(),",
+						"          EffectiveEndDate = toDate('9999-12-31', 'YYYY-mm-dd'),",
+						"          IsCurrentRow = 'Y') ~> StartAndEndDate",
+						"UpdateExistRecords sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Customer_ID as integer,",
+						"          CustomerTitle as string,",
+						"          CustomerFirstName as string,",
+						"          CustomerMiddleName as string,",
+						"          CustomerLastName as string,",
+						"          CustomerSuffix as string,",
+						"          CompanyOfName as string,",
+						"          SalesPersonEmail as string,",
+						"          CustomerEmailAddress as string,",
+						"          CustomerPhone as string,",
+						"          StartDate as timestamp,",
+						"          EndDate as timestamp,",
+						"          isCurrentRow as string,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:true,",
+						"     upsertable:false,",
+						"     keys:['Customer_ID'],",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Customer_ID = CustomerID,",
+						"          EndDate = EffectiveEndDate,",
+						"          isCurrentRow = SetEnddateRecord@IsCurrentRow",
+						"     )) ~> sink1",
+						"NewDimensions sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Customer_ID as integer,",
+						"          CustomerTitle as string,",
+						"          CustomerFirstName as string,",
+						"          CustomerMiddleName as string,",
+						"          CustomerLastName as string,",
+						"          CustomerSuffix as string,",
+						"          CompanyOfName as string,",
+						"          SalesPersonEmail as string,",
+						"          CustomerEmailAddress as string,",
+						"          CustomerPhone as string,",
+						"          StartDate as timestamp,",
+						"          EndDate as timestamp,",
+						"          isCurrentRow as string,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Customer_ID = CustomerID,",
+						"          CustomerTitle = Title,",
+						"          CustomerFirstName = FirstName,",
+						"          CustomerMiddleName = MiddleName,",
+						"          CustomerLastName = LastName,",
+						"          CustomerSuffix = Suffix,",
+						"          CompanyOfName = CompanyName,",
+						"          SalesPersonEmail = SalesPerson,",
+						"          CustomerEmailAddress = EmailAddress,",
+						"          CustomerPhone = Phone,",
+						"          StartDate = EffectiveStartDate,",
+						"          EndDate = EffectiveEndDate,",
+						"          isCurrentRow = NewDimensions@IsCurrentRow,",
+						"          HashKey = SliptCondition@newrecords@HashKey",
+						"     )) ~> sink4",
+						"StartAndEndDate sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Customer_ID as integer,",
+						"          CustomerTitle as string,",
+						"          CustomerFirstName as string,",
+						"          CustomerMiddleName as string,",
+						"          CustomerLastName as string,",
+						"          CustomerSuffix as string,",
+						"          CompanyOfName as string,",
+						"          SalesPersonEmail as string,",
+						"          CustomerEmailAddress as string,",
+						"          CustomerPhone as string,",
+						"          StartDate as timestamp,",
+						"          EndDate as timestamp,",
+						"          isCurrentRow as string,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Customer_ID = CustomerID,",
+						"          CustomerTitle = Title,",
+						"          CustomerFirstName = FirstName,",
+						"          CustomerMiddleName = MiddleName,",
+						"          CustomerLastName = LastName,",
+						"          CustomerSuffix = Suffix,",
+						"          CompanyOfName = CompanyName,",
+						"          SalesPersonEmail = SalesPerson,",
+						"          CustomerEmailAddress = EmailAddress,",
+						"          CustomerPhone = Phone,",
+						"          StartDate = EffectiveStartDate,",
+						"          EndDate = EffectiveEndDate,",
+						"          isCurrentRow = StartAndEndDate@IsCurrentRow,",
+						"          HashKey = SliptCondition@updatedRecords@HashKey",
+						"     )) ~> sink5"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CustomerSource')]",
+				"[concat(variables('workspaceId'), '/datasets/DimCustomers')]",
+				"[concat(variables('workspaceId'), '/linkedServices/scdworkspace-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/UpdateCustomerDimensions')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CustomerSource",
+								"type": "DatasetReference"
+							},
+							"name": "sourceDB"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dimcustomer",
+								"type": "DatasetReference"
+							},
+							"name": "DimCustomer"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dimcustomer",
+								"type": "DatasetReference"
+							},
+							"name": "Sink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "CreateCustomerHash"
+						},
+						{
+							"name": "Exists"
+						},
+						{
+							"name": "LookupCustomerID"
+						},
+						{
+							"name": "SetDates"
+						},
+						{
+							"name": "AllowUpserts"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as integer,",
+						"          Title as string,",
+						"          FirstName as string,",
+						"          MiddleName as string,",
+						"          LastName as string,",
+						"          Suffix as string,",
+						"          CompanyName as string,",
+						"          SalesPerson as string,",
+						"          EmailAddress as string,",
+						"          Phone as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> sourceDB",
+						"source(output(",
+						"          CustomerID as integer,",
+						"          Title as string,",
+						"          FirstName as string,",
+						"          MiddleName as string,",
+						"          LastName as string,",
+						"          Suffix as string,",
+						"          CompanyName as string,",
+						"          SalesPerson as string,",
+						"          EmailAddress as string,",
+						"          Phone as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> DimCustomer",
+						"sourceDB derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateCustomerHash",
+						"CreateCustomerHash, DimCustomer exists(CreateCustomerHash@HashKey == DimCustomer@HashKey,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> Exists",
+						"Exists, DimCustomer lookup(sourceDB@CustomerID == DimCustomer@CustomerID,",
+						"     multiple: false,",
+						"     pickup: 'any',",
+						"     broadcast: 'auto')~> LookupCustomerID",
+						"LookupCustomerID derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),",
+						"          ModifiedDate = currentTimestamp()) ~> SetDates",
+						"SetDates alterRow(upsertIf(true())) ~> AllowUpserts",
+						"AllowUpserts sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          CustomerID as integer,",
+						"          Title as string,",
+						"          FirstName as string,",
+						"          MiddleName as string,",
+						"          LastName as string,",
+						"          Suffix as string,",
+						"          CompanyName as string,",
+						"          SalesPerson as string,",
+						"          EmailAddress as string,",
+						"          Phone as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['CustomerID'],",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          CustomerID = sourceDB@CustomerID,",
+						"          Title = sourceDB@Title,",
+						"          FirstName = sourceDB@FirstName,",
+						"          MiddleName = sourceDB@MiddleName,",
+						"          LastName = sourceDB@LastName,",
+						"          Suffix = sourceDB@Suffix,",
+						"          CompanyName = sourceDB@CompanyName,",
+						"          SalesPerson = sourceDB@SalesPerson,",
+						"          EmailAddress = sourceDB@EmailAddress,",
+						"          Phone = sourceDB@Phone,",
+						"          InsertedDate,",
+						"          ModifiedDate,",
+						"          HashKey = CreateCustomerHash@HashKey",
+						"     )) ~> Sink"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CustomerSource')]",
+				"[concat(variables('workspaceId'), '/datasets/Dimcustomer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE [dbo].[CustomerSource] (\n    [CustomerID] [int] NOT NULL,\n    [Title] [nvarchar](8),\n    [FirstName] [nvarchar](50),\n    [MiddleName] [nvarchar](50),\n    [LastName] [nvarchar](50),\n    [Suffix] [nvarchar](10),\n    [CompanyName] [nvarchar](128),\n    [SalesPerson] [nvarchar](256),\n    [EmailAddress] [nvarchar](50),\n    [Phone] [nvarchar](25)\n) WITH ( HEAP )\n\nCOPY INTO [dbo].[CustomerSource]\nFROM 'https://solliancepublicdata.blob.core.windows.net/dataengineering/dp-203/awdata/CustomerSource.csv'\nWITH (\n    FILE_TYPE='CSV',\n    FIELDTERMINATOR='|',\n    FIELDQUOTE='',\n    ROWTERMINATOR='0x0a',\n    ENCODING = 'UTF16'\n)\n\nCREATE TABLE dbo.[DimCustomers](\n    [Customer_ID] [int] NOT NULL,\n    [CustomerTitle] [nvarchar](8) NULL,\n    [CustomerFirstName] [nvarchar](50) NOT NULL,\n    [CustomerMiddleName] [nvarchar](50) NULL,\n    [CustomerLastName] [nvarchar](50) NOT NULL,\n    [CustomerSuffix] [nvarchar](10) NULL,\n    [CompanyOfName] [nvarchar](128) NULL,\n    [SalesPersonEmail] [nvarchar](256) NULL,\n    [CustomerEmailAddress] [nvarchar](50) NULL,\n    [CustomerPhone] [nvarchar](25) NULL,\n    [StartDate] [datetime] NOT NULL,\n    [EndDate] [datetime] NOT NULL,\n    [isCurrentRow] [char](1) NOT NULL,\n    [HashKey] [char](64) Not Null\n)\n\n\n\ndrop table [DimCustomers];",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT * FROM [dbo].[DimCustomers];\n\n\nUPDATE [dbo].[CustomerSource]\nSET Phone= '654-33-73940'\nWHERE [CustomerId] = 120",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [CustomerID]\n,[Title]\n,[FirstName]\n,[MiddleName]\n,[LastName]\n,[Suffix]\n,[CompanyName]\n,[SalesPerson]\n,[EmailAddress]\n,[Phone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [CustomerID]\n,[Title]\n,[FirstName]\n,[MiddleName]\n,[LastName]\n,[Suffix]\n,[CompanyName]\n,[SalesPerson]\n,[EmailAddress]\n,[Phone]\n FROM [dbo].[CustomerSource]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [Customer_ID]\n,[CustomerTitle]\n,[CustomerFirstName]\n,[CustomerMiddleName]\n,[CustomerLastName]\n,[CustomerSuffix]\n,[CompanyOfName]\n,[SalesPersonEmail]\n,[CustomerEmailAddress]\n,[CustomerPhone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]\n where Customer_ID= 505;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 6')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [Customer_ID]\n,[CustomerTitle]\n,[CustomerFirstName]\n,[CustomerMiddleName]\n,[CustomerLastName]\n,[CustomerSuffix]\n,[CompanyOfName]\n,[SalesPersonEmail]\n,[CustomerEmailAddress]\n,[CustomerPhone]\n,[StartDate]\n,[EndDate]\n,[isCurrentRow]\n,[HashKey]\n FROM [dbo].[DimCustomers]\n WHERE Customer_Id= 219;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "blaksaxonsql",
+						"poolName": "blaksaxonsql"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/blaksaxonsql')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "uksouth"
+		}
+	]
+}
